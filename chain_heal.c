@@ -13,6 +13,7 @@ typedef struct node{
     struct node *prev;
     int adj_size;
     struct node **adj;
+    int visited;
 } Node;
 
 int main(int argc, char const *argv[])
