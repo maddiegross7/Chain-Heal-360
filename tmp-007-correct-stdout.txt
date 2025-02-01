@@ -1,0 +1,6 @@
+Urgosa_the_Healing_Shaman 5000
+Bolt-VanderHuge_the_Dragonslayer 3550
+Varrus_the_Paladin 2520
+Paloc_the_Ugly 1790
+Joker_the_Knight 1271
+Total_Healing 14131

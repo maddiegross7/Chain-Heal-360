@@ -6,6 +6,7 @@
 
 //./chain_heal 2 1 4 500 0.25 < small.txt  
 //./chain_heal 1 2 4 500 0.25 < small.txt 
+//./chain_heal 2 1 4 500 0.25 < small.txt | /home/jplank/cs360/labs/Lab-1-Chain-Heal/gradeall
 
 typedef struct node{
     char *name;
@@ -32,42 +33,80 @@ typedef struct game{
 } Game;
 
 void DFS(Node *player, int hopNumber, Game *game, double total_healing, Node *from){
+
+    printf("starting with %s, hop: %i current power: %i, max power %i\n", player->name,hopNumber, player->cur_PP, player->max_PP);
     //base cases
-    if(hopNumber > game->num_jumps || player == NULL || player->visited == 1){
+    // if(hopNumber > game->num_jumps || player == NULL || player->visited == 1){
+    //     printf("base case reached\n");
+    //     return;
+    // }
+
+    if (hopNumber > game->num_jumps) {
+        //printf("Base case reached: hopNumber exceeded num_jumps\n");
         return;
     }
 
+    if (player == NULL) {
+        //printf("Base case reached: player is NULL\n");
+        return;
+    }
+
+    if (player->visited == 1) {
+        //printf("Base case reached: player already visited\n");
+        return;
+    }
+
+
     player->visited = 1;
 
-    int fullHealing = rint(player->cur_PP + total_healing);//what is possible to be healed
+    int fullHealing = player->cur_PP + total_healing;//what is possible to be healed
     int playerPower = fmin(fullHealing, player->max_PP);//the power level of player after healing
-    int actuallyHealed = playerPower-player->cur_PP;//how much the player was actually healed
-    game->healing[hopNumber-1]=actuallyHealed;
+    int actuallyHealed = (playerPower-player->cur_PP);//how much the player was actually healed
+    player->healing = actuallyHealed;
 
     player->prev = from;
 
     int allHealing = 0;
-    for(int i=0; i < hopNumber; i++){
-        allHealing += game->healing[i];
-    }
+    // for(int i=0; i < hopNumber; i++){
+    //     allHealing += game->healing[i];
+    //     printf("Hop %i healing amount: %i\n",i+1, game->healing[i]);
+    // }
+
+    Node *current = player;
+
+    for(int i=hopNumber-1; i >=0; i--){
+        allHealing += current->healing;
+        current = current->prev;
+    } 
+
+    printf("allHealing: %i", allHealing);
+
+    printf("Who: %s, Hop #: %i, Total Healing: %i\n", player->name, hopNumber, allHealing);
 
     if(allHealing > game->best_healing){
+        printf("Old score: %i, New Score: %i\n", game->best_healing, allHealing);
         game->best_healing = allHealing;
         game->best_path_length = hopNumber;
         Node *current = player;
 
         for(int i=hopNumber-1; i >=0; i--){
+            // printf("player: %s, ", player->name);
+            // if(player->prev != NULL){
+            //     printf("prev: %s\n", player->prev->name);
+            // }
+            //printf("\n");
             game->best_path[i] = current;
+            game->healing[i] = current->healing;
             current = current->prev;
-        }
+        }        
     }
 
-    int reducedHealing = rint(total_healing * (1-game->power_reduction));
+    double reducedHealing = (total_healing * (1-game->power_reduction));
     for(int i = 0; i < player->adj_size; i++){
         DFS(player->adj[i], hopNumber+1, game, reducedHealing, player);
     }
     player->visited = 0;
-    player->cur_PP -= actuallyHealed;
+    //player->cur_PP -= actuallyHealed;
 }
 
 int main(int argc, char const *argv[])
@@ -177,13 +216,11 @@ int main(int argc, char const *argv[])
     }
 
     //printf("heyyy");
-    for(int i = 0; i < size; i++){
-        printf("%s: %i\n", players[i]->name, game.best_healing);
+    for(int i = 0; i < game.best_path_length; i++){
+        printf("%s %i\n", game.best_path[i]->name, game.healing[i]);
     }
-    for(int i=0; i < game.num_jumps; i++){
-        //printf("starting");
-        printf("player %i: %s \n", i+1, game.best_path[i]->name);
-    }
+
+    printf("Total_Healing %i\n", game.best_healing);
 
     return 0;
 }
