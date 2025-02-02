@@ -1,3 +1,6 @@
+//Lab 1: Chain Heal
+//Madelyn Gross
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -34,67 +37,41 @@ typedef struct game{
 
 void DFS(Node *player, int hopNumber, Game *game, double total_healing, Node *from){
 
-    printf("starting with %s, hop: %i current power: %i, max power %i\n", player->name,hopNumber, player->cur_PP, player->max_PP);
     //base cases
-    // if(hopNumber > game->num_jumps || player == NULL || player->visited == 1){
-    //     printf("base case reached\n");
-    //     return;
-    // }
-
     if (hopNumber > game->num_jumps) {
-        //printf("Base case reached: hopNumber exceeded num_jumps\n");
         return;
     }
-
     if (player == NULL) {
-        //printf("Base case reached: player is NULL\n");
         return;
     }
-
     if (player->visited == 1) {
-        //printf("Base case reached: player already visited\n");
         return;
     }
-
 
     player->visited = 1;
-
-    int fullHealing = player->cur_PP + total_healing;//what is possible to be healed
-    int playerPower = fmin(fullHealing, player->max_PP);//the power level of player after healing
-    int actuallyHealed = (playerPower-player->cur_PP);//how much the player was actually healed
+    
+    //need to keep these two as doubles so we do not end up with an off by one error
+    double fullHealing = player->cur_PP + total_healing;//what is possible to be healed
+    double playerPower = fmin(fullHealing, player->max_PP);//the power level of player after healing
+    int actuallyHealed = rint(playerPower-player->cur_PP);//how much the player was actually healed
     player->healing = actuallyHealed;
 
     player->prev = from;
 
     int allHealing = 0;
-    // for(int i=0; i < hopNumber; i++){
-    //     allHealing += game->healing[i];
-    //     printf("Hop %i healing amount: %i\n",i+1, game->healing[i]);
-    // }
 
     Node *current = player;
-
     for(int i=hopNumber-1; i >=0; i--){
         allHealing += current->healing;
         current = current->prev;
     } 
 
-    printf("allHealing: %i", allHealing);
-
-    printf("Who: %s, Hop #: %i, Total Healing: %i\n", player->name, hopNumber, allHealing);
-
     if(allHealing > game->best_healing){
-        printf("Old score: %i, New Score: %i\n", game->best_healing, allHealing);
         game->best_healing = allHealing;
         game->best_path_length = hopNumber;
         Node *current = player;
 
         for(int i=hopNumber-1; i >=0; i--){
-            // printf("player: %s, ", player->name);
-            // if(player->prev != NULL){
-            //     printf("prev: %s\n", player->prev->name);
-            // }
-            //printf("\n");
             game->best_path[i] = current;
             game->healing[i] = current->healing;
             current = current->prev;
@@ -106,7 +83,6 @@ void DFS(Node *player, int hopNumber, Game *game, double total_healing, Node *fr
         DFS(player->adj[i], hopNumber+1, game, reducedHealing, player);
     }
     player->visited = 0;
-    //player->cur_PP -= actuallyHealed;
 }
 
 int main(int argc, char const *argv[])
@@ -124,8 +100,9 @@ int main(int argc, char const *argv[])
     game.initial_power = atoi(argv[4]);
     game.power_reduction = atof(argv[5]);
     game.best_path = malloc((game.num_jumps)*sizeof(Node *));
-    game.healing = malloc((game.num_jumps)*sizeof(int));
     game.best_healing = 0;
+
+    game.healing = malloc((game.num_jumps)*sizeof(int));
     for (int i = 0; i < game.num_jumps; i++) {
         game.healing[i] = 0;
     }
@@ -134,7 +111,6 @@ int main(int argc, char const *argv[])
     char name[101] = "";
 
     int size=0;
-    
     Node *prev = NULL;
 
     while(scanf("%d %d %d %d %s", &x, &y, &current_pp, &max_pp, name) == 5){
@@ -146,11 +122,8 @@ int main(int argc, char const *argv[])
         player->cur_PP = current_pp;
         player->max_PP = max_pp;
         player->healing = 0;
-
         player->name = strdup(name);
-
         player->prev = prev;
-
         player->adj_size = 0;
         player->visited = 0;
         prev = player;
@@ -179,23 +152,19 @@ int main(int argc, char const *argv[])
             int yDiff = (players[j]->y - y);
 
             int hopsNeeded = (xDiff*xDiff) + (yDiff*yDiff);
-            //printf("initial range squared: %i, hopsNeeded: %i\n", initialRangeSquared, hopsNeeded);
 
             if((hopsNeeded <= (game.jump_range*game.jump_range)) && strcmp(players[j]->name, players[i]->name) != 0){
                 players[i]->adj_size++;
-                //printf("player within jumprange\n");
             }
 
             if(hopsNeeded <= initialRangeSquared && strcmp("Urgosa_the_Healing_Shaman", players[i]->name)==0){
                 players[j]->withinInitialRange = 1;
-                //printf("%s is within initial range\n", players[j]->name);
             }
         }
 
         players[i]->adj = malloc((players[i]->adj_size)*sizeof(Node *));
 
         int neighborsFound = 0;
-
         for(int j=0; j < size; j++){
             int xDiff = (players[j]->x - x);
             int yDiff = (players[j]->y - y);
@@ -203,7 +172,6 @@ int main(int argc, char const *argv[])
 
             if((hopsNeeded <= (game.jump_range*game.jump_range)) && strcmp(players[j]->name, players[i]->name) != 0){
                 players[i]->adj[neighborsFound] = players[j];
-                //printf("we are adding to adjacency list!");
                 neighborsFound++;
             }
         }
@@ -215,12 +183,22 @@ int main(int argc, char const *argv[])
         }
     }
 
-    //printf("heyyy");
     for(int i = 0; i < game.best_path_length; i++){
         printf("%s %i\n", game.best_path[i]->name, game.healing[i]);
     }
 
     printf("Total_Healing %i\n", game.best_healing);
+
+    for (int i = 0; i < size; i++){
+        free(players[i]->adj);
+        free(players[i]->name);
+        free(players[i]);
+    }
+
+    free(game.best_path);
+    game.best_path = NULL;
+    free(game.healing);
+    game.healing = NULL;
 
     return 0;
 }
